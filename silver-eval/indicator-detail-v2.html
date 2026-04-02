@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>평가지표 상세 — v2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+<script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','system-ui','sans-serif']},colors:{accent:{50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8'}}}}}
+</script>
+<style>
+.break-keep{word-break:keep-all}.tabular{font-variant-numeric:tabular-nums}
+.noise{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.f-label{font-size:13px;font-weight:600;color:#475569;padding-top:10px;white-space:nowrap}
+.f-label .req{color:#ef4444;margin-right:2px}
+.f-row{display:grid;grid-template-columns:140px 1fr;gap:0 16px;padding:10px 0;border-bottom:1px solid #f1f5f9;align-items:start}
+.f-row:last-child{border-bottom:none}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;cursor:pointer;transition:all .15s}
+.chip:has(input:checked){border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
+.chip input{display:none}
+.rpill{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;cursor:pointer;transition:all .15s}
+.rpill:has(input:checked){border-color:#2563eb;background:#eff6ff;color:#1d4ed8;font-weight:600}
+.rpill input{display:none}
+.fi{height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:4px;font-size:13px;font-family:inherit;color:#334155;background:#fff;transition:all .15s}
+.fi:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+select.fi{padding-right:28px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+textarea.fi{height:auto;padding:10px;line-height:1.6;resize:vertical}
+.dyn-row{display:flex;gap:8px;align-items:center;padding:6px 0}
+.dyn-row .idx{width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:#f1f5f9;border-radius:4px;font-size:11px;font-weight:700;color:#64748b;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:36px;padding:0 16px;font-size:13px;font-weight:500;border-radius:4px;border:1px solid transparent;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn:active{transform:translateY(1px)}
+.btn-p{background:#2563eb;color:#fff;border-color:#2563eb}.btn-p:hover{background:#1d4ed8}
+.btn-o{background:#fff;color:#2563eb;border-color:#bfdbfe}.btn-o:hover{background:#eff6ff;border-color:#60a5fa}
+.btn-s{background:#fff;color:#475569;border-color:#cbd5e1}.btn-s:hover{background:#f8fafc}
+.btn-d{background:#fff;color:#dc2626;border-color:#fca5a5}.btn-d:hover{background:#fef2f2}
+.btn-xs{height:28px;padding:0 10px;font-size:12px}
+.toast-c{position:fixed;top:60px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:500;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.12);transform:translateX(calc(100% + 24px));transition:transform .3s cubic-bezier(.16,1,.3,1)}
+.toast.show{transform:translateX(0)}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden;margin-bottom:16px}
+.card-head{padding:12px 20px;border-bottom:1px solid #f1f5f9;background:#f8fafc;display:flex;align-items:center;gap:8px}
+.card-head h3{font-size:14px;font-weight:700;color:#1e293b}
+.card-body{padding:16px 20px}
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+<div class="noise"></div>
+
+<div id="common-header"></div>
+<script src="common-header.js"></script>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <nav class="flex items-center gap-1.5 text-xs text-slate-400 mb-2">
+    <span>평가지표</span><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[10px]"></iconify-icon>
+    <span>평가지표 관리</span><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[10px]"></iconify-icon>
+    <span class="text-slate-600 font-medium">상세</span>
+  </nav>
+  <h1 class="text-xl font-bold text-slate-900 tracking-tight leading-snug mb-5 break-keep">평가지표 상세</h1>
+
+  <!-- ══ 기본정보 ══ -->
+  <div class="card">
+    <div class="card-head"><iconify-icon icon="solar:document-text-linear" class="text-accent-500"></iconify-icon><h3>기본정보</h3></div>
+    <div class="card-body">
+      <div class="f-row"><div class="f-label"><span class="req">*</span>평가정보</div><div><select class="fi w-72"><option>2026년 종합평가(종합형)</option><option>2026년 종합평가(기본형)</option></select></div></div>
+      <div class="f-row"><div class="f-label"><span class="req">*</span>지표유형</div><div class="flex gap-2 pt-1"><label class="rpill"><input type="radio" name="indicatorType" checked>종합</label><label class="rpill"><input type="radio" name="indicatorType">기본</label></div></div>
+      <div class="f-row"><div class="f-label"><span class="req">*</span>특화서비스 포함</div><div class="flex gap-2 pt-1"><label class="rpill"><input type="radio" name="specialYn">사용</label><label class="rpill"><input type="radio" name="specialYn" checked>미사용</label></div></div>
+      <div class="f-row"><div class="f-label"><span class="req">*</span>지표영역</div><div><select class="fi w-60"><option>운영관��</option><option>서비스 제공</option><option>서비스 성��</option><option>특화서비스</option></select></div></div>
+      <div class="f-row"><div class="f-label"><span class="req">*</span>평가지표명</div><div><input type="text" class="fi w-full" value="전담사회복지사 배치 기준 준수"></div></div>
+      <div class="f-row"><div class="f-label"><span class="req">*</span>정렬순서</div><div><input type="number" class="fi w-20 tabular text-center" value="3"></div></div>
+    </div>
+  </div>
+
+  <!-- ══ 평가 설정 ══ -->
+  <div class="card">
+    <div class="card-head"><iconify-icon icon="solar:settings-linear" class="text-accent-500"></iconify-icon><h3>평가 설정</h3></div>
+    <div class="card-body">
+      <div class="f-row"><div class="f-label"><span class="req">*</span>평가유형</div><div class="flex gap-2 pt-1 flex-wrap"><label class="rpill"><input type="radio" name="evalType">정성</label><label class="rpill"><input type="radio" name="evalType">정량</label><label class="rpill"><input type="radio" name="evalType" checked>혼합</label><label class="rpill"><input type="radio" name="evalType">세부정량</label></div></div>
+      <div class="f-row"><div class="f-label"><span class="req">*</span>평가방법</div><div><select class="fi w-48"><option value="">선택</option><option selected>Y/N</option><option>충족률</option><option>비율</option><option>실적</option></select></div></div>
+      <div class="f-row"><div class="f-label"><span class="req">*</span>점검방법</div><div><select class="fi w-48"><option value="">선택</option><option selected>해당/비해당</option><option>우수/보통/미흡</option><option>5점 만점</option></select></div></div>
+      <div class="f-row"><div class="f-label">센터관리지표</div><div class="flex gap-2 pt-1"><label class="rpill"><input type="radio" name="managed" checked>Y</label><label class="rpill"><input type="radio" name="managed">N</label></div></div>
+      <div class="f-row"><div class="f-label"><span class="req">*</span>배점</div><div class="flex items-center gap-2"><input type="number" class="fi w-20 tabular text-center" value="5"><span class="text-sm text-slate-500">점</span></div></div>
+      <div class="f-row"><div class="f-label">첨부파일 건수</div><div class="flex items-center gap-2"><input type="number" class="fi w-20 tabular text-center" value="3"><span class="text-sm text-slate-500">건</span></div></div>
+    </div>
+  </div>
+
+  <!-- ══ 평가위원 배정 ══ -->
+  <div class="card">
+    <div class="card-head"><iconify-icon icon="solar:users-group-rounded-linear" class="text-accent-500"></iconify-icon><h3>평가위원 배정</h3></div>
+    <div class="card-body"><div class="flex flex-wrap gap-2">
+      <label class="chip"><input type="checkbox" checked>현장점검단1</label>
+      <label class="chip"><input type="checkbox" checked>현장점검단2</label>
+      <label class="chip"><input type="checkbox" checked>학계점검단</label>
+      <label class="chip"><input type="checkbox">점검지원단</label>
+      <label class="chip"><input type="checkbox">광역지원단</label>
+    </div></div>
+  </div>
+
+  <!-- ══ 점검내용 (동적) ══ -->
+  <div class="card">
+    <div class="card-head">
+      <iconify-icon icon="solar:list-check-linear" class="text-accent-500"></iconify-icon><h3>점검내용</h3>
+      <div class="ml-auto flex gap-1"><button class="btn btn-o btn-xs" onclick="addMethod()"><iconify-icon icon="solar:add-circle-linear"></iconify-icon>추가</button><button class="btn btn-s btn-xs" onclick="removeMethod()"><iconify-icon icon="solar:minus-circle-linear"></iconify-icon>삭제</button></div>
+    </div>
+    <div class="card-body" id="methodList">
+      <div class="dyn-row"><span class="idx">1</span><input type="text" class="fi flex-1" value="전담사회복지사 배치 현황"><input type="text" class="fi w-56" placeholder="계산식" value="배치인원/기준인원×100"></div>
+      <div class="dyn-row"><span class="idx">2</span><input type="text" class="fi flex-1" value="인력 교육 이수율"><input type="text" class="fi w-56" placeholder="계산식" value="이수인원/전체인원×100"></div>
+      <div class="dyn-row"><span class="idx">3</span><input type="text" class="fi flex-1" value="사례관리 기록 완성도"><input type="text" class="fi w-56" placeholder="계산식"></div>
+    </div>
+  </div>
+
+  <!-- ══ 배점안배 (동적) ══ -->
+  <div class="card">
+    <div class="card-head">
+      <iconify-icon icon="solar:chart-2-linear" class="text-accent-500"></iconify-icon><h3>배점안배</h3>
+      <div class="ml-auto flex gap-1"><button class="btn btn-o btn-xs" onclick="addGrade()"><iconify-icon icon="solar:add-circle-linear"></iconify-icon>추가</button><button class="btn btn-s btn-xs" onclick="removeGrade()"><iconify-icon icon="solar:minus-circle-linear"></iconify-icon>삭제</button></div>
+    </div>
+    <div class="card-body"><div class="overflow-x-auto">
+      <table class="w-full text-sm"><thead><tr class="border-b border-slate-200 bg-slate-50/50">
+        <th class="px-3 py-2 text-xs font-semibold text-slate-500 text-center w-24">등급</th>
+        <th class="px-3 py-2 text-xs font-semibold text-slate-500 text-center w-24">배점</th>
+        <th class="px-3 py-2 text-xs font-semibold text-slate-500 text-center w-32">충족 수 (이상)</th>
+        <th class="px-3 py-2 text-xs font-semibold text-slate-500 text-center w-32">충족 수 (미만)</th>
+      </tr></thead>
+      <tbody id="gradeList">
+        <tr class="border-b border-slate-100"><td class="px-3 py-2 text-center"><select class="fi w-16 text-center"><option selected>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select></td><td class="px-3 py-2 text-center"><input type="number" class="fi w-16 tabular text-center" value="5"></td><td class="px-3 py-2 text-center"><input type="number" class="fi w-16 tabular text-center" value="3"></td><td class="px-3 py-2 text-center"><input type="number" class="fi w-16 tabular text-center" value=""></td></tr>
+        <tr class="border-b border-slate-100"><td class="px-3 py-2 text-center"><select class="fi w-16 text-center"><option>A</option><option selected>B</option><option>C</option><option>D</option><option>E</option></select></td><td class="px-3 py-2 text-center"><input type="number" class="fi w-16 tabular text-center" value="3"></td><td class="px-3 py-2 text-center"><input type="number" class="fi w-16 tabular text-center" value="2"></td><td class="px-3 py-2 text-center"><input type="number" class="fi w-16 tabular text-center" value="3"></td></tr>
+        <tr class="border-b border-slate-100"><td class="px-3 py-2 text-center"><select class="fi w-16 text-center"><option>A</option><option>B</option><option selected>C</option><option>D</option><option>E</option></select></td><td class="px-3 py-2 text-center"><input type="number" class="fi w-16 tabular text-center" value="1"></td><td class="px-3 py-2 text-center"><input type="number" class="fi w-16 tabular text-center" value="0"></td><td class="px-3 py-2 text-center"><input type="number" class="fi w-16 tabular text-center" value="2"></td></tr>
+      </tbody></table>
+    </div></div>
+  </div>
+
+  <!-- ══ 점검방법 기술 ══ -->
+  <div class="card">
+    <div class="card-head"><iconify-icon icon="solar:pen-new-square-linear" class="text-accent-500"></iconify-icon><h3>점검방법 기술</h3></div>
+    <div class="card-body"><textarea class="fi w-full" rows="6">1. 전담사회복지사 배치 현황을 확인합니다.
+2. 관련 서류(재직증명서, 자격증 사본)를 검토합니다.
+3. 배치 기준 대비 실제 인원을 비교 평가합니다.</textarea></div>
+  </div>
+
+  <!-- ══ 제출자료 ══ -->
+  <div class="card">
+    <div class="card-head"><iconify-icon icon="solar:folder-open-linear" class="text-accent-500"></iconify-icon><h3>제출자료</h3></div>
+    <div class="card-body"><textarea class="fi w-full" rows="4">- 전담사회복지사 재직증명서
+- 사회복지사 자격증 사본
+- 인력 배치 현황표</textarea></div>
+  </div>
+
+  <!-- ══ 이의제기 설정 ══ -->
+  <div class="card">
+    <div class="card-head"><iconify-icon icon="solar:flag-linear" class="text-accent-500"></iconify-icon><h3>이의제기 설정</h3></div>
+    <div class="card-body">
+      <div class="f-row"><div class="f-label">이의제기 사용</div><div class="pt-1"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chkDemurral" checked class="w-4 h-4 accent-accent-600"><span class="text-sm">사용</span></label></div></div>
+      <div class="f-row"><div class="f-label">이의제기 등록</div><div class="pt-1"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chkDemurralInsert" checked class="w-4 h-4 accent-accent-600"><span class="text-sm">사용</span></label></div></div>
+      <div class="f-row" id="periodRow"><div class="f-label">이의제기 기간</div><div class="flex items-center gap-2 flex-wrap"><input type="datetime-local" class="fi" value="2026-04-01T09:00"><span class="text-slate-400">~</span><input type="datetime-local" class="fi" value="2026-04-15T18:00"></div></div>
+    </div>
+  </div>
+
+  <!-- ══ 하단 버튼 ══ -->
+  <div class="flex items-center justify-between mt-2 mb-8">
+    <button class="btn btn-s" data-action="back"><iconify-icon icon="solar:arrow-left-linear"></iconify-icon>목록으로 돌아가기</button>
+    <div class="flex gap-2">
+      <button class="btn btn-d" data-action="delete"><iconify-icon icon="solar:trash-bin-minimalistic-linear"></iconify-icon>삭제</button>
+      <button class="btn btn-o" data-action="demurral">이의제기 기간 수정</button>
+      <button class="btn btn-p" data-action="save"><iconify-icon icon="solar:diskette-linear"></iconify-icon>저장</button>
+    </div>
+  </div>
+</main>
+
+<div class="toast-c" id="toastC"></div>
+<script>
+function toast(m,t){var c=document.getElementById('toastC'),el=document.createElement('div'),bg={success:'#059669',error:'#dc2626',info:'#334155'};el.className='toast';el.style.background=bg[t]||bg.info;el.textContent=m;c.appendChild(el);requestAnimationFrame(function(){requestAnimationFrame(function(){el.classList.add('show')})});setTimeout(function(){el.classList.remove('show');setTimeout(function(){el.remove()},300)},2500)}
+function addMethod(){var l=document.getElementById('methodList'),n=l.querySelectorAll('.dyn-row').length+1,d=document.createElement('div');d.className='dyn-row';d.innerHTML='<span class="idx">'+n+'</span><input type="text" class="fi flex-1" placeholder="평가내용"><input type="text" class="fi w-56" placeholder="계산식">';l.appendChild(d);toast('항목 추가','info')}
+function removeMethod(){var l=document.getElementById('methodList'),r=l.querySelectorAll('.dyn-row');if(r.length<=1){toast('최소 1개 필요','error');return}r[r.length-1].remove();toast('삭제됨','info')}
+function addGrade(){var t=document.getElementById('gradeList'),r=t.querySelectorAll('tr');if(r.length>=5){toast('최대 5개','error');return}var tr=r[0].cloneNode(true);tr.querySelectorAll('input').forEach(function(i){i.value=''});t.appendChild(tr);toast('등급 추가','info')}
+function removeGrade(){var t=document.getElementById('gradeList'),r=t.querySelectorAll('tr');if(r.length<=1){toast('최소 1개 필요','error');return}r[r.length-1].remove();toast('삭제됨','info')}
+document.getElementById('chkDemurral').addEventListener('change',function(){if(!this.checked){document.getElementById('chkDemurralInsert').checked=false;document.getElementById('periodRow').style.opacity='.4';document.getElementById('periodRow').style.pointerEvents='none'}else{document.getElementById('periodRow').style.opacity='1';document.getElementById('periodRow').style.pointerEvents='auto'}});
+document.querySelectorAll('[data-action]').forEach(function(b){b.addEventListener('click',function(){var m={save:['저장되었습니다','success'],'delete':['삭제되었습니다','error'],back:['목록으로 이동','info'],demurral:['이의제기 기간 수정됨','success']};var d=m[this.dataset.action];if(d)toast(d[0],d[1])})});
+</script>
+</body>
+</html>

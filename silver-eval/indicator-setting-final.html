@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지표구조 관리 — 최종 디자인</title>
+<meta name="description" content="노인맞춤돌봄서비스 품질관리시스템 지표구조 관리">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+<script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Pretendard', 'system-ui', 'sans-serif'],
+      },
+      colors: {
+        accent: {
+          50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe',
+          400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+        }
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+      },
+      keyframes: {
+        fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },
+        slideUp: { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+      }
+    }
+  }
+}
+</script>
+<style>
+  /* word-break for Korean text */
+  .break-keep { word-break: keep-all; }
+
+  /* Editable cell indicator */
+  .cell-editable { position: relative; cursor: text; }
+  .cell-editable::after {
+    content: ''; position: absolute; bottom: 0; left: 12px; right: 12px;
+    height: 1.5px; background: transparent;
+    transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cell-editable:hover::after { background: #2563eb; }
+  .cell-editable:hover { background: rgba(37, 99, 235, 0.04); }
+
+  /* Custom checkbox */
+  .chk { -webkit-appearance: none; appearance: none; width: 16px; height: 16px;
+    border: 1.5px solid #94a3b8; border-radius: 3px; background: #fff;
+    cursor: pointer; position: relative; vertical-align: middle;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1); }
+  .chk:checked { background: #2563eb; border-color: #2563eb; }
+  .chk:checked::after { content: ''; position: absolute; top: 1px; left: 4.5px;
+    width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0;
+    transform: rotate(45deg); }
+  .chk:hover { border-color: #2563eb; }
+  .chk:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+
+  /* Toast animation */
+  .toast-enter { transform: translateX(calc(100% + 24px)); }
+  .toast-visible { transform: translateX(0); }
+
+  /* Tab panel */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+  /* Tabular nums for data */
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Subtle noise texture overlay */
+  .noise-overlay {
+    position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: 0.02;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 antialiased">
+<!-- Noise overlay for organic feel -->
+<div class="noise-overlay"></div>
+
+<!-- ═══ Top Nav Bar ═══ -->
+<div id="common-header"></div>
+<script src="common-header.js"></script>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+  <!-- ═══ Breadcrumb + Page Header ═══ -->
+  <div class="mb-6 animate-fade-in">
+    <nav class="flex items-center gap-1.5 text-xs text-slate-400 mb-2">
+      <span>평가지표</span>
+      <iconify-icon icon="solar:alt-arrow-right-linear" class="text-[10px]"></iconify-icon>
+      <span class="text-slate-600 font-medium">지표구조 관리</span>
+    </nav>
+    <h1 class="text-xl font-bold text-slate-900 tracking-tight leading-snug break-keep">지표구조 관리</h1>
+  </div>
+
+  <!-- ═══ Tab Bar ═══ -->
+  <div class="flex gap-0 border-b-2 border-slate-200 mb-5 animate-fade-in" style="animation-delay:50ms">
+    <button class="tab-btn active px-5 py-2.5 text-sm font-semibold text-accent-600 relative transition-colors duration-200" data-tab="panel-eval">
+      <iconify-icon icon="solar:document-text-linear" class="mr-1.5 align-[-2px]"></iconify-icon>평가정보 관리
+      <span class="tab-indicator absolute bottom-[-2px] left-0 right-0 h-[2px] bg-accent-600 transition-all duration-200"></span>
+    </button>
+    <button class="tab-btn px-5 py-2.5 text-sm font-medium text-slate-400 relative transition-colors duration-200 hover:text-slate-600" data-tab="panel-domain">
+      <iconify-icon icon="solar:layers-linear" class="mr-1.5 align-[-2px]"></iconify-icon>지표영역 관리
+      <span class="tab-indicator absolute bottom-[-2px] left-0 right-0 h-[2px] bg-transparent transition-all duration-200"></span>
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       Panel 1: 평가정보
+       ═══════════════════════════════════ -->
+  <section id="panel-eval" class="tab-panel active">
+
+    <!-- Search Card -->
+    <div class="bg-white border border-slate-200 rounded shadow-sm shadow-slate-200/50 p-5 mb-4 animate-slide-up" style="animation-delay:100ms">
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">기준년도</label>
+          <select class="h-9 px-3 pr-8 text-sm border border-slate-300 rounded bg-white text-slate-700 appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20d%3D%22M3%205l3%203%203-3%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-no-repeat bg-[right_8px_center] focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all w-[110px]">
+            <option>2024</option><option>2025</option><option selected>2026</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">지표유형</label>
+          <select class="h-9 px-3 pr-8 text-sm border border-slate-300 rounded bg-white text-slate-700 appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20d%3D%22M3%205l3%203%203-3%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-no-repeat bg-[right_8px_center] focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all w-[120px]">
+            <option value="">전체</option><option>종합</option><option>기본</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">수행기관</label>
+          <select class="h-9 px-3 pr-8 text-sm border border-slate-300 rounded bg-white text-slate-700 appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20d%3D%22M3%205l3%203%203-3%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-no-repeat bg-[right_8px_center] focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all w-[120px]">
+            <option value="">전체</option><option>광역시도</option><option>시군구</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">조회조건</label>
+          <div class="flex gap-1.5">
+            <select class="h-9 px-3 pr-8 text-sm border border-slate-300 rounded bg-white text-slate-700 appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20d%3D%22M3%205l3%203%203-3%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-no-repeat bg-[right_8px_center] focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all w-[120px]">
+              <option value="">조회조건</option><option>평가정보</option>
+            </select>
+            <input type="text" placeholder="검색어 입력" class="h-9 px-3 text-sm border border-slate-300 rounded bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all w-[180px]">
+          </div>
+        </div>
+        <div class="flex-1"></div>
+        <div class="flex gap-1.5">
+          <button data-action="search" class="h-9 px-4 text-sm font-medium text-white bg-accent-600 rounded hover:bg-accent-700 active:scale-[0.98] transition-all duration-200 flex items-center gap-1.5">
+            <iconify-icon icon="solar:magnifer-linear" class="text-base"></iconify-icon>조회
+          </button>
+          <button data-action="reset" class="h-9 px-4 text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] transition-all duration-200">초기화</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Card -->
+    <div class="bg-white border border-slate-200 rounded shadow-sm shadow-slate-200/50 overflow-hidden animate-slide-up" style="animation-delay:150ms">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50/70">
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-slate-500 break-keep">총 <strong class="text-accent-600 font-semibold tabular">5</strong>건</span>
+        </div>
+        <div class="flex items-center gap-1.5 text-[11px] text-slate-400">
+          <iconify-icon icon="solar:pen-new-square-linear" class="text-sm"></iconify-icon>
+          <span class="break-keep">셀을 클릭하면 편집할 수 있습니다</span>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50/50">
+              <th class="w-11 px-3 py-2.5"><input type="checkbox" class="chk select-all"></th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap"><span class="text-red-400 mr-0.5">*</span>평가정보</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap"><span class="text-red-400 mr-0.5">*</span>기준년도</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap"><span class="text-red-400 mr-0.5">*</span>평가대상연도</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap"><span class="text-red-400 mr-0.5">*</span>지표유형</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap"><span class="text-red-400 mr-0.5">*</span>수행기관</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap">등록자</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap">수정자</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm">
+            <tr class="border-b border-slate-100 hover:bg-accent-50/40 transition-colors">
+              <td class="px-3 py-2.5 text-center"><input type="checkbox" class="chk row-chk"></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">2026년 종합평가(종합형)</td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">2026</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular">2025</td>
+              <td class="px-3 py-2.5 text-center cell-editable"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-sky-50 text-sky-700">종합</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">광역시도</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+            </tr>
+            <tr class="border-b border-slate-100 bg-slate-50/30 hover:bg-accent-50/40 transition-colors">
+              <td class="px-3 py-2.5 text-center"><input type="checkbox" class="chk row-chk"></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">2026년 종합평가(기본형)</td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">2026</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular">2025</td>
+              <td class="px-3 py-2.5 text-center cell-editable"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-amber-50 text-amber-700">기본</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">시군구</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+            </tr>
+            <tr class="border-b border-slate-100 hover:bg-accent-50/40 transition-colors">
+              <td class="px-3 py-2.5 text-center"><input type="checkbox" class="chk row-chk"></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">2025년 종합평가(종합형)</td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">2025</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular">2024</td>
+              <td class="px-3 py-2.5 text-center cell-editable"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-sky-50 text-sky-700">종합</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">광역시도</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+            </tr>
+            <tr class="border-b border-slate-100 bg-slate-50/30 hover:bg-accent-50/40 transition-colors">
+              <td class="px-3 py-2.5 text-center"><input type="checkbox" class="chk row-chk"></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">2025년 종합평가(기본형)</td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">2025</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular">2024</td>
+              <td class="px-3 py-2.5 text-center cell-editable"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-amber-50 text-amber-700">기본</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">시군구</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+            </tr>
+            <tr class="border-b border-slate-100 hover:bg-accent-50/40 transition-colors">
+              <td class="px-3 py-2.5 text-center"><input type="checkbox" class="chk row-chk"></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">2025년 상시점검(종합형)</td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">2025</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular">2024</td>
+              <td class="px-3 py-2.5 text-center cell-editable"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-sky-50 text-sky-700">종합</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">광역시도</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-center items-center gap-1 py-3 border-t border-slate-100">
+        <button class="w-8 h-8 flex items-center justify-center text-sm text-slate-300 rounded" disabled>
+          <iconify-icon icon="solar:alt-arrow-left-linear"></iconify-icon>
+        </button>
+        <button class="w-8 h-8 flex items-center justify-center text-sm font-semibold text-white bg-accent-600 rounded">1</button>
+        <button class="w-8 h-8 flex items-center justify-center text-sm text-slate-300 rounded" disabled>
+          <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
+        </button>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/70">
+        <div class="flex gap-1.5">
+          <button data-action="delete" class="h-8 px-3 text-xs font-medium text-red-500 bg-white border border-red-200 rounded hover:bg-red-50 hover:border-red-400 active:scale-[0.98] transition-all duration-200 flex items-center gap-1">
+            <iconify-icon icon="solar:trash-bin-minimalistic-linear" class="text-sm"></iconify-icon>삭제
+          </button>
+        </div>
+        <div class="flex gap-1.5">
+          <button data-action="add-row" class="h-8 px-3 text-xs font-medium text-slate-500 bg-white border border-slate-300 rounded hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] transition-all duration-200 flex items-center gap-1">
+            <iconify-icon icon="solar:add-circle-linear" class="text-sm"></iconify-icon>행 추가
+          </button>
+          <button data-action="insert" class="h-8 px-3 text-xs font-medium text-white bg-accent-600 rounded hover:bg-accent-700 active:scale-[0.98] transition-all duration-200 flex items-center gap-1">
+            <iconify-icon icon="solar:upload-minimalistic-linear" class="text-sm"></iconify-icon>신규 등록
+          </button>
+          <button data-action="update" class="h-8 px-3 text-xs font-medium text-accent-600 bg-white border border-accent-200 rounded hover:bg-accent-50 hover:border-accent-400 active:scale-[0.98] transition-all duration-200 flex items-center gap-1">
+            <iconify-icon icon="solar:diskette-linear" class="text-sm"></iconify-icon>수정 저장
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════
+       Panel 2: 지표영역
+       ═══════════════════════════════════ -->
+  <section id="panel-domain" class="tab-panel">
+
+    <!-- Search Card -->
+    <div class="bg-white border border-slate-200 rounded shadow-sm shadow-slate-200/50 p-5 mb-4">
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">기준년도</label>
+          <select class="h-9 px-3 pr-8 text-sm border border-slate-300 rounded bg-white text-slate-700 appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20d%3D%22M3%205l3%203%203-3%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-no-repeat bg-[right_8px_center] focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all w-[110px]">
+            <option>2024</option><option>2025</option><option selected>2026</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">평가정보</label>
+          <select class="h-9 px-3 pr-8 text-sm border border-slate-300 rounded bg-white text-slate-700 appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20d%3D%22M3%205l3%203%203-3%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-no-repeat bg-[right_8px_center] focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all w-[220px]">
+            <option value="">전체</option><option>2026년 종합평가(종합형)</option><option>2026년 종합평가(기본형)</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">조회조건</label>
+          <div class="flex gap-1.5">
+            <select class="h-9 px-3 pr-8 text-sm border border-slate-300 rounded bg-white text-slate-700 appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20d%3D%22M3%205l3%203%203-3%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-no-repeat bg-[right_8px_center] focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all w-[120px]">
+              <option value="">조회조건</option><option>지표영역</option>
+            </select>
+            <input type="text" placeholder="검색어 입력" class="h-9 px-3 text-sm border border-slate-300 rounded bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all w-[180px]">
+          </div>
+        </div>
+        <div class="flex-1"></div>
+        <div class="flex gap-1.5">
+          <button data-action="search" class="h-9 px-4 text-sm font-medium text-white bg-accent-600 rounded hover:bg-accent-700 active:scale-[0.98] transition-all duration-200 flex items-center gap-1.5">
+            <iconify-icon icon="solar:magnifer-linear" class="text-base"></iconify-icon>조회
+          </button>
+          <button data-action="reset" class="h-9 px-4 text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] transition-all duration-200">초기화</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Card -->
+    <div class="bg-white border border-slate-200 rounded shadow-sm shadow-slate-200/50 overflow-hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50/70">
+        <span class="text-sm text-slate-500 break-keep">총 <strong class="text-accent-600 font-semibold tabular">5</strong>건</span>
+        <div class="flex items-center gap-1.5 text-[11px] text-slate-400">
+          <iconify-icon icon="solar:pen-new-square-linear" class="text-sm"></iconify-icon>
+          <span class="break-keep">셀을 클릭하면 편집할 수 있습니다</span>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50/50">
+              <th class="w-11 px-3 py-2.5"><input type="checkbox" class="chk select-all"></th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap"><span class="text-red-400 mr-0.5">*</span>지표영역</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap"><span class="text-red-400 mr-0.5">*</span>기준년도</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap"><span class="text-red-400 mr-0.5">*</span>평가정보</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap"><span class="text-red-400 mr-0.5">*</span>특화서비스 포함</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap"><span class="text-red-400 mr-0.5">*</span>정렬순서</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap">등록자</th>
+              <th class="px-3 py-2.5 text-xs font-semibold text-slate-500 text-center whitespace-nowrap">수정자</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm">
+            <tr class="border-b border-slate-100 hover:bg-accent-50/40 transition-colors">
+              <td class="px-3 py-2.5 text-center"><input type="checkbox" class="chk row-chk"></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">운영관리</td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">2026</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">2026년 종합평가(종합형)</td>
+              <td class="px-3 py-2.5 text-center cell-editable"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">N</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular">1</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+            </tr>
+            <tr class="border-b border-slate-100 bg-slate-50/30 hover:bg-accent-50/40 transition-colors">
+              <td class="px-3 py-2.5 text-center"><input type="checkbox" class="chk row-chk"></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">서비스 제공</td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">2026</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">2026년 종합평가(종합형)</td>
+              <td class="px-3 py-2.5 text-center cell-editable"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">N</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular">2</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+            </tr>
+            <tr class="border-b border-slate-100 hover:bg-accent-50/40 transition-colors">
+              <td class="px-3 py-2.5 text-center"><input type="checkbox" class="chk row-chk"></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">서비스 성과</td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">2026</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">2026년 종합평가(종합형)</td>
+              <td class="px-3 py-2.5 text-center cell-editable"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">N</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular">3</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+            </tr>
+            <tr class="border-b border-slate-100 bg-slate-50/30 hover:bg-accent-50/40 transition-colors">
+              <td class="px-3 py-2.5 text-center"><input type="checkbox" class="chk row-chk"></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">특화서비스</td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">2026</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">2026년 종합평가(종합형)</td>
+              <td class="px-3 py-2.5 text-center cell-editable"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-sky-50 text-sky-700">Y</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular">4</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+            </tr>
+            <tr class="border-b border-slate-100 hover:bg-accent-50/40 transition-colors">
+              <td class="px-3 py-2.5 text-center"><input type="checkbox" class="chk row-chk"></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">이용자 만족도</td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">2026</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable break-keep">2026년 종합평가(종합형)</td>
+              <td class="px-3 py-2.5 text-center cell-editable"><span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">N</span></td>
+              <td class="px-3 py-2.5 text-center cell-editable tabular">5</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">admin</td>
+              <td class="px-3 py-2.5 text-center text-slate-400">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-center items-center gap-1 py-3 border-t border-slate-100">
+        <button class="w-8 h-8 flex items-center justify-center text-sm text-slate-300 rounded" disabled>
+          <iconify-icon icon="solar:alt-arrow-left-linear"></iconify-icon>
+        </button>
+        <button class="w-8 h-8 flex items-center justify-center text-sm font-semibold text-white bg-accent-600 rounded">1</button>
+        <button class="w-8 h-8 flex items-center justify-center text-sm text-slate-300 rounded" disabled>
+          <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
+        </button>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/70">
+        <div class="flex gap-1.5">
+          <button data-action="delete" class="h-8 px-3 text-xs font-medium text-red-500 bg-white border border-red-200 rounded hover:bg-red-50 hover:border-red-400 active:scale-[0.98] transition-all duration-200 flex items-center gap-1">
+            <iconify-icon icon="solar:trash-bin-minimalistic-linear" class="text-sm"></iconify-icon>삭제
+          </button>
+        </div>
+        <div class="flex gap-1.5">
+          <button data-action="add-row" class="h-8 px-3 text-xs font-medium text-slate-500 bg-white border border-slate-300 rounded hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] transition-all duration-200 flex items-center gap-1">
+            <iconify-icon icon="solar:add-circle-linear" class="text-sm"></iconify-icon>행 추가
+          </button>
+          <button data-action="insert" class="h-8 px-3 text-xs font-medium text-white bg-accent-600 rounded hover:bg-accent-700 active:scale-[0.98] transition-all duration-200 flex items-center gap-1">
+            <iconify-icon icon="solar:upload-minimalistic-linear" class="text-sm"></iconify-icon>신규 등록
+          </button>
+          <button data-action="update" class="h-8 px-3 text-xs font-medium text-accent-600 bg-white border border-accent-200 rounded hover:bg-accent-50 hover:border-accent-400 active:scale-[0.98] transition-all duration-200 flex items-center gap-1">
+            <iconify-icon icon="solar:diskette-linear" class="text-sm"></iconify-icon>수정 저장
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Toast Container -->
+<div id="toast-container" class="fixed top-16 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(function(b) {
+      b.classList.remove('active');
+      b.classList.replace('text-accent-600', 'text-slate-400');
+      b.classList.replace('font-semibold', 'font-medium');
+      b.querySelector('.tab-indicator').style.background = 'transparent';
+    });
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+
+    btn.classList.add('active');
+    btn.classList.replace('text-slate-400', 'text-accent-600');
+    btn.classList.replace('font-medium', 'font-semibold');
+    btn.querySelector('.tab-indicator').style.background = '#2563eb';
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Select all checkbox
+document.querySelectorAll('.select-all').forEach(function(sa) {
+  sa.addEventListener('change', function() {
+    var tbl = this.closest('table');
+    tbl.querySelectorAll('.row-chk').forEach(function(c) { c.checked = sa.checked; });
+  });
+});
+
+// Toast
+function showToast(msg, type) {
+  var container = document.getElementById('toast-container');
+  var colors = { success: 'bg-accent-600', error: 'bg-red-500', info: 'bg-slate-700' };
+  var icons = { success: 'solar:check-circle-bold', error: 'solar:close-circle-bold', info: 'solar:info-circle-bold' };
+  var toast = document.createElement('div');
+  toast.className = 'pointer-events-auto flex items-center gap-2 px-4 py-3 rounded shadow-lg text-sm font-medium text-white ' + (colors[type] || colors.info) + ' toast-enter transition-transform duration-300';
+  toast.innerHTML = '<iconify-icon icon="' + (icons[type] || icons.info) + '"></iconify-icon>' + msg;
+  container.appendChild(toast);
+  requestAnimationFrame(function() { requestAnimationFrame(function() { toast.classList.replace('toast-enter', 'toast-visible'); }); });
+  setTimeout(function() {
+    toast.classList.replace('toast-visible', 'toast-enter');
+    setTimeout(function() { toast.remove(); }, 300);
+  }, 2500);
+}
+
+// Button actions
+document.querySelectorAll('[data-action]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var m = {
+      search: ['조회가 완료되었습니다', 'info'],
+      reset: ['검색 조건이 초기화되었습니다', 'info'],
+      'add-row': ['새 행이 추가되었습니다', 'info'],
+      insert: ['등록이 완료되었습니다', 'success'],
+      update: ['수정 사항이 저장되었습니다', 'success'],
+      'delete': ['선택된 항목이 삭제되었습니다', 'error']
+    };
+    var d = m[this.dataset.action];
+    if (d) showToast(d[0], d[1]);
+  });
+});
+</script>
+</body>
+</html>

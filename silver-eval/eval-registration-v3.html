@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>평가 등록 — v3</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+<script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','system-ui','sans-serif']},colors:{accent:{50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8'}}}}}</script>
+<style>
+.break-keep{word-break:keep-all}.tabular{font-variant-numeric:tabular-nums}
+.noise{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.fi{height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:4px;font-size:13px;font-family:inherit;color:#334155;background:#fff;transition:all .15s}
+.fi:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+textarea.fi{height:auto;padding:10px;line-height:1.6;resize:vertical}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:36px;padding:0 16px;font-size:13px;font-weight:500;border-radius:4px;border:1px solid transparent;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn:active{transform:translateY(1px)}
+.btn-p{background:#2563eb;color:#fff;border-color:#2563eb}.btn-p:hover{background:#1d4ed8}
+.btn-o{background:#fff;color:#2563eb;border-color:#bfdbfe}.btn-o:hover{background:#eff6ff}
+.btn-s{background:#fff;color:#475569;border-color:#cbd5e1}.btn-s:hover{background:#f8fafc}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden;margin-bottom:16px}
+.card-head{padding:12px 20px;border-bottom:1px solid #f1f5f9;background:#f8fafc;display:flex;align-items:center;gap:8px}
+.card-head h3{font-size:14px;font-weight:700;color:#1e293b}
+.card-body{padding:16px 20px}
+.side-link{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:13px;color:#475569;border-radius:4px;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.side-link:hover{background:#f1f5f9}
+.side-link.active{background:#eff6ff;color:#2563eb;font-weight:600;border-left-color:#2563eb}
+.side-link .badge{font-size:10px;padding:1px 6px;border-radius:3px;margin-left:auto;font-weight:600}
+.grade-row{display:flex;gap:0;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden}
+.grade-item{flex:1;text-align:center;padding:10px 8px;font-size:13px;cursor:pointer;border-right:1px solid #e2e8f0;transition:all .15s}
+.grade-item:last-child{border-right:none}
+.grade-item:hover{background:#f8fafc}
+.grade-item:has(input:checked){background:#eff6ff;color:#1d4ed8;font-weight:600}
+.grade-item input{display:none}
+.grade-item .g-label{font-weight:600;display:block}
+.grade-item .g-score{font-size:11px;color:#94a3b8;display:block;margin-top:2px}
+.grade-item:has(input:checked) .g-score{color:#60a5fa}
+.eval-method-row{display:grid;grid-template-columns:1fr 100px 100px;gap:0;border-bottom:1px solid #f1f5f9;align-items:center}
+.eval-method-row:last-child{border-bottom:none}
+.rpill-sm{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px;cursor:pointer;transition:all .15s}
+.rpill-sm:has(input:checked){border-color:#2563eb;background:#eff6ff;color:#1d4ed8;font-weight:600}
+.rpill-sm input{display:none}
+.dq-table th{font-size:12px;font-weight:600;color:#475569;text-align:center;padding:8px;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+.dq-table td{padding:8px;text-align:center;border-bottom:1px solid #f1f5f9}
+.dq-input{width:80px;height:32px;padding:0 8px;border:1px solid #cbd5e1;border-radius:4px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;font-family:inherit}
+.dq-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.panel{display:none}.panel.active{display:block}
+.toast-c{position:fixed;top:60px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:500;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.12);transform:translateX(calc(100% + 24px));transition:transform .3s cubic-bezier(.16,1,.3,1)}
+.toast.show{transform:translateX(0)}
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+<div class="noise"></div>
+<div id="common-header"></div>
+<script src="common-header.js"></script>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <nav class="flex items-center gap-1.5 text-xs text-slate-400 mb-2">
+    <span>종합평가</span><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[10px]"></iconify-icon>
+    <span>평가결과등록</span><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[10px]"></iconify-icon>
+    <span class="text-slate-600 font-medium">지표별 평가</span>
+  </nav>
+  <div class="flex items-center justify-between mb-5">
+    <h1 class="text-xl font-bold text-slate-900 tracking-tight leading-snug break-keep">평가 등록 (강남구노인맞춤돌봄센터)</h1>
+    <button class="btn btn-s" onclick="toast('목록으로 이동','info')"><iconify-icon icon="solar:arrow-left-linear"></iconify-icon>목록으로 돌아가기</button>
+  </div>
+
+  <div class="flex gap-5" style="align-items:flex-start">
+    <!-- ══ 좌측 사이드바 ══ -->
+    <aside class="w-64 flex-shrink-0 sticky top-16">
+      <div class="card mb-0">
+        <!-- 유형별 샘플 네비 -->
+        <div class="card-head"><h3 class="text-sm">평가 유형별 샘플</h3></div>
+        <div class="p-3 flex flex-col gap-1">
+          <a class="side-link active" data-panel="p-qualitative">
+            <iconify-icon icon="solar:star-linear" class="text-base flex-shrink-0"></iconify-icon>
+            <span class="break-keep">정성 평가</span>
+            <span class="badge bg-emerald-50 text-emerald-700">정성</span>
+          </a>
+          <a class="side-link" data-panel="p-quantitative">
+            <iconify-icon icon="solar:calculator-linear" class="text-base flex-shrink-0"></iconify-icon>
+            <span class="break-keep">정량 평가</span>
+            <span class="badge bg-sky-50 text-sky-700">정량</span>
+          </a>
+          <a class="side-link" data-panel="p-mixed">
+            <iconify-icon icon="solar:shuffle-linear" class="text-base flex-shrink-0"></iconify-icon>
+            <span class="break-keep">혼합 평가</span>
+            <span class="badge bg-amber-50 text-amber-700">혼합</span>
+          </a>
+          <a class="side-link" data-panel="p-detailed">
+            <iconify-icon icon="solar:chart-2-linear" class="text-base flex-shrink-0"></iconify-icon>
+            <span class="break-keep">세부정량 평가</span>
+            <span class="badge bg-purple-50 text-purple-700">세부</span>
+          </a>
+        </div>
+        <!-- 지표 목록 -->
+        <div class="card-head border-t"><h3 class="text-sm">평가 항목</h3></div>
+        <div class="p-3 flex flex-col gap-1">
+          <a class="side-link"><iconify-icon icon="solar:buildings-2-linear" class="text-base flex-shrink-0"></iconify-icon><span class="break-keep">수행기관 총괄표</span></a>
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 pt-3 pb-1">운영관리</div>
+          <a class="side-link"><span class="break-keep text-xs">1. 전담사회복지사 배치 기준 준수</span><span class="badge bg-slate-100 text-slate-500">5점</span></a>
+          <a class="side-link"><span class="break-keep text-xs">2. 전담인력 교육 이수</span><span class="badge bg-slate-100 text-slate-500">3점</span></a>
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 pt-3 pb-1">서비스 제공</div>
+          <a class="side-link"><span class="break-keep text-xs">3. 사례관리 수행 적정성</span><span class="badge bg-slate-100 text-slate-500">7점</span></a>
+          <a class="side-link"><span class="break-keep text-xs">4. 서비스 제공 계획 수립</span><span class="badge bg-slate-100 text-slate-500">5점</span></a>
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 pt-3 pb-1">서비스 성과</div>
+          <a class="side-link"><span class="break-keep text-xs">5. 이용자 만족도 조사</span><span class="badge bg-slate-100 text-slate-500">10점</span></a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ══ 우측 콘텐츠 ══ -->
+    <div class="flex-1 min-w-0">
+
+      <!-- ── 정성 ── -->
+      <div id="p-qualitative" class="panel active">
+        <div class="card"><div class="card-body">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">운영관리</span>
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-emerald-50 text-emerald-700">정성</span>
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">배점 5점</span>
+          </div>
+          <h2 class="text-lg font-bold text-slate-900 break-keep">전담사회복지사 배치 기준 준수</h2>
+          <details class="mt-3"><summary class="text-sm text-accent-600 cursor-pointer font-medium">점검방법 보기</summary><div class="mt-2 text-sm text-slate-600 leading-relaxed bg-slate-50 rounded p-3">1. 전담사회복지사 배치 현황을 확인합니다.<br>2. 관련 서류를 검토합니다.</div></details>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>자체점검 결과</h3></div><div class="card-body">
+          <div class="grade-row">
+            <label class="grade-item"><input type="radio" name="sg-q"><span class="g-label">A</span><span class="g-score">5점</span></label>
+            <label class="grade-item"><input type="radio" name="sg-q"><span class="g-label">B</span><span class="g-score">4점</span></label>
+            <label class="grade-item"><input type="radio" name="sg-q" checked><span class="g-label">C</span><span class="g-score">3점</span></label>
+            <label class="grade-item"><input type="radio" name="sg-q"><span class="g-label">D</span><span class="g-score">2점</span></label>
+            <label class="grade-item"><input type="radio" name="sg-q"><span class="g-label">E</span><span class="g-score">1점</span></label>
+          </div>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>최종점검 결과</h3></div><div class="card-body">
+          <div class="grade-row">
+            <label class="grade-item"><input type="radio" name="fg-q"><span class="g-label">A</span><span class="g-score">5점</span></label>
+            <label class="grade-item"><input type="radio" name="fg-q" checked><span class="g-label">B</span><span class="g-score">4점</span></label>
+            <label class="grade-item"><input type="radio" name="fg-q"><span class="g-label">C</span><span class="g-score">3점</span></label>
+            <label class="grade-item"><input type="radio" name="fg-q"><span class="g-label">D</span><span class="g-score">2점</span></label>
+            <label class="grade-item"><input type="radio" name="fg-q"><span class="g-label">E</span><span class="g-score">1점</span></label>
+          </div>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>비고</h3></div><div class="card-body"><textarea class="fi w-full" rows="4" placeholder="평가 의견을 입력하세요"></textarea></div></div>
+        <div class="card"><div class="card-head"><h3>첨부파일</h3></div><div class="card-body">
+          <div class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-accent-400 transition-colors cursor-pointer"><iconify-icon icon="solar:upload-minimalistic-linear" class="text-3xl text-slate-400"></iconify-icon><p class="text-sm text-slate-500 mt-2">파일을 드래그하거나 클릭하여 업로드</p></div>
+          <div class="mt-3 flex items-center gap-3 text-sm text-slate-600 bg-slate-50 rounded px-3 py-2"><iconify-icon icon="solar:file-text-linear" class="text-base text-accent-500"></iconify-icon><span>배치현황_2026.pdf (1.2MB)</span><button class="ml-auto text-red-400 hover:text-red-600"><iconify-icon icon="solar:close-circle-linear"></iconify-icon></button></div>
+        </div></div>
+      </div>
+
+      <!-- ── 정량 ── -->
+      <div id="p-quantitative" class="panel">
+        <div class="card"><div class="card-body">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">운영관리</span>
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-sky-50 text-sky-700">정량</span>
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">배점 5점</span>
+          </div>
+          <h2 class="text-lg font-bold text-slate-900 break-keep">전담인력 교육 이수</h2>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>점검내용</h3></div><div class="card-body">
+          <div class="bg-slate-50 rounded p-4 mb-4"><div class="text-xs font-semibold text-slate-400 mb-1">계산식</div><div class="text-sm text-slate-700 font-mono">이수인원 / 전체인원 × 100</div></div>
+          <div class="grid grid-cols-3 gap-4">
+            <div><label class="text-xs font-semibold text-slate-500 block mb-1">이수인원</label><input type="number" class="fi w-full tabular text-right" value="7"></div>
+            <div><label class="text-xs font-semibold text-slate-500 block mb-1">전체인원</label><input type="number" class="fi w-full tabular text-right" value="8"></div>
+            <div><label class="text-xs font-semibold text-slate-500 block mb-1">결과값 (%)</label><input type="text" class="fi w-full tabular text-right bg-slate-50 font-semibold" value="87.5" disabled></div>
+          </div>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>자체점검 결과</h3></div><div class="card-body">
+          <div class="grade-row">
+            <label class="grade-item"><input type="radio" name="sg-qt"><span class="g-label">A</span><span class="g-score">90% 이상</span></label>
+            <label class="grade-item"><input type="radio" name="sg-qt" checked><span class="g-label">B</span><span class="g-score">80~90%</span></label>
+            <label class="grade-item"><input type="radio" name="sg-qt"><span class="g-label">C</span><span class="g-score">70~80%</span></label>
+          </div>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>비고</h3></div><div class="card-body"><textarea class="fi w-full" rows="4" placeholder="평가 의견을 입력하세요"></textarea></div></div>
+      </div>
+
+      <!-- ── 혼합 ── -->
+      <div id="p-mixed" class="panel">
+        <div class="card"><div class="card-body">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">서비스 제공</span>
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-amber-50 text-amber-700">혼합</span>
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">배점 7점</span>
+          </div>
+          <h2 class="text-lg font-bold text-slate-900 break-keep">사례관리 수행 적정성</h2>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>점검내용</h3><span class="ml-auto text-xs text-slate-400">해당 항목 수에 따라 결과가 자동 산출됩니다</span></div><div class="card-body p-0">
+          <div class="eval-method-row bg-slate-50"><div class="px-4 py-2 text-xs font-semibold text-slate-500">평가내용</div><div class="text-center py-2 text-xs font-semibold text-slate-500">해당</div><div class="text-center py-2 text-xs font-semibold text-slate-500">비해당</div></div>
+          <div class="eval-method-row"><div class="px-4 py-3 text-sm break-keep">1. 사례관리 대상자 선정 적정성</div><div class="text-center py-3"><label class="rpill-sm"><input type="radio" name="ev1" checked>해당</label></div><div class="text-center py-3"><label class="rpill-sm"><input type="radio" name="ev1">비해당</label></div></div>
+          <div class="eval-method-row"><div class="px-4 py-3 text-sm break-keep">2. 서비스 제공 계획 수립 여부</div><div class="text-center py-3"><label class="rpill-sm"><input type="radio" name="ev2" checked>해당</label></div><div class="text-center py-3"><label class="rpill-sm"><input type="radio" name="ev2">비해당</label></div></div>
+          <div class="eval-method-row"><div class="px-4 py-3 text-sm break-keep">3. 사례회의 정기 개최 여부</div><div class="text-center py-3"><label class="rpill-sm"><input type="radio" name="ev3">해당</label></div><div class="text-center py-3"><label class="rpill-sm"><input type="radio" name="ev3" checked>비해당</label></div></div>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>자체점검 결과</h3><span class="ml-auto text-xs text-slate-400">해당 2건 → B등급 자동 선택</span></div><div class="card-body">
+          <div class="grade-row">
+            <label class="grade-item"><input type="radio" name="sg-m" disabled><span class="g-label">A</span><span class="g-score">3건 이상</span></label>
+            <label class="grade-item"><input type="radio" name="sg-m" checked disabled><span class="g-label">B</span><span class="g-score">2건</span></label>
+            <label class="grade-item"><input type="radio" name="sg-m" disabled><span class="g-label">C</span><span class="g-score">0~1건</span></label>
+          </div>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>비고</h3></div><div class="card-body"><textarea class="fi w-full" rows="4" placeholder="평가 의견을 입력하세요"></textarea></div></div>
+      </div>
+
+      <!-- ── 세부정량 ── -->
+      <div id="p-detailed" class="panel">
+        <div class="card"><div class="card-body">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">서비스 성과</span>
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-purple-50 text-purple-700">세부정량</span>
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">배점 10점</span>
+          </div>
+          <h2 class="text-lg font-bold text-slate-900 break-keep">이용자 만족도 조사</h2>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>점검내용 입력</h3><span class="ml-auto text-xs text-slate-400">평가위원별 점수 입력 → 평균 자동 산출</span></div><div class="card-body p-0 overflow-x-auto">
+          <table class="w-full dq-table">
+            <thead><tr><th class="w-48 text-left pl-4">평가내용</th><th>수행기관</th><th>전문가 1</th><th>전문가 2</th><th>전문가 3</th><th>평균</th></tr></thead>
+            <tbody>
+              <tr><td class="text-left pl-4 text-sm text-slate-700 break-keep">만족도 조사 실시율</td><td><input type="number" class="dq-input" value="92"></td><td><input type="number" class="dq-input" value="88"></td><td><input type="number" class="dq-input" value="91"></td><td><input type="number" class="dq-input" value="85"></td><td class="font-semibold tabular text-accent-600">88.0</td></tr>
+              <tr><td class="text-left pl-4 text-sm text-slate-700 break-keep">조사 결과 환류 여부</td><td><input type="number" class="dq-input" value="85"></td><td><input type="number" class="dq-input" value="82"></td><td><input type="number" class="dq-input" value="87"></td><td><input type="number" class="dq-input" value="80"></td><td class="font-semibold tabular text-accent-600">83.0</td></tr>
+              <tr><td class="text-left pl-4 text-sm text-slate-700 break-keep">불만 처리 적정성</td><td><input type="number" class="dq-input" value="78"></td><td><input type="number" class="dq-input" value="75"></td><td><input type="number" class="dq-input" value="80"></td><td><input type="number" class="dq-input" value="77"></td><td class="font-semibold tabular text-accent-600">77.3</td></tr>
+              <tr class="bg-slate-50"><td class="text-left pl-4 text-sm font-bold text-slate-700">통합점수</td><td class="font-semibold tabular">85.0</td><td class="font-semibold tabular">81.7</td><td class="font-semibold tabular">86.0</td><td class="font-semibold tabular">80.7</td><td class="font-bold tabular text-accent-700 text-base">82.8</td></tr>
+            </tbody>
+          </table>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>자체점검 결과</h3><span class="ml-auto text-xs text-slate-400">통합점수 기준 자동 산출</span></div><div class="card-body">
+          <div class="grade-row">
+            <label class="grade-item"><input type="radio" name="sg-d" disabled><span class="g-label">A</span><span class="g-score">90 이상</span></label>
+            <label class="grade-item"><input type="radio" name="sg-d" checked disabled><span class="g-label">B</span><span class="g-score">80~90</span></label>
+            <label class="grade-item"><input type="radio" name="sg-d" disabled><span class="g-label">C</span><span class="g-score">70~80</span></label>
+            <label class="grade-item"><input type="radio" name="sg-d" disabled><span class="g-label">D</span><span class="g-score">60~70</span></label>
+            <label class="grade-item"><input type="radio" name="sg-d" disabled><span class="g-label">E</span><span class="g-score">60 미만</span></label>
+          </div>
+        </div></div>
+        <div class="card"><div class="card-head"><h3>비고</h3></div><div class="card-body"><textarea class="fi w-full" rows="4" placeholder="평가 의견을 입력하세요"></textarea></div></div>
+      </div>
+
+      <!-- 공통 하단 버튼 -->
+      <div class="flex items-center justify-between mt-2 mb-8">
+        <button class="btn btn-s" onclick="toast('이전 지표','info')"><iconify-icon icon="solar:arrow-left-linear"></iconify-icon>이전 지표</button>
+        <div class="flex gap-2">
+          <button class="btn btn-o" onclick="toast('임시저장 완료','success')"><iconify-icon icon="solar:diskette-linear"></iconify-icon>임시저장</button>
+          <button class="btn btn-p" onclick="toast('저장 후 다음 지표','success')">저장 후 다음<iconify-icon icon="solar:arrow-right-linear"></iconify-icon></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-c" id="toastC"></div>
+<script>
+function toast(m,t){var c=document.getElementById('toastC'),el=document.createElement('div'),bg={success:'#059669',error:'#dc2626',info:'#334155'};el.className='toast';el.style.background=bg[t]||bg.info;el.textContent=m;c.appendChild(el);requestAnimationFrame(function(){requestAnimationFrame(function(){el.classList.add('show')})});setTimeout(function(){el.classList.remove('show');setTimeout(function(){el.remove()},300)},2500)}
+
+// 좌측 유형 탭 전환
+document.querySelectorAll('[data-panel]').forEach(function(link){
+  link.addEventListener('click',function(){
+    document.querySelectorAll('[data-panel]').forEach(function(l){l.classList.remove('active')});
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+    link.classList.add('active');
+    document.getElementById(link.dataset.panel).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

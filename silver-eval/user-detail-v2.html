@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사용자 정보 상세 — v2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+<script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','system-ui','sans-serif']},colors:{accent:{50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8'}}}}}
+</script>
+<style>
+.break-keep{word-break:keep-all}.tabular{font-variant-numeric:tabular-nums}
+.noise{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.f-label{font-size:13px;font-weight:600;color:#475569;padding-top:10px;white-space:nowrap}
+.f-label .req{color:#ef4444;margin-right:2px}
+.f-row{display:grid;grid-template-columns:140px 1fr;gap:0 16px;padding:10px 0;border-bottom:1px solid #f1f5f9;align-items:start}
+.f-row:last-child{border-bottom:none}
+.f-row-2{display:grid;grid-template-columns:140px 1fr 140px 1fr;gap:0 16px;padding:10px 0;border-bottom:1px solid #f1f5f9;align-items:start}
+.f-row-2:last-child{border-bottom:none}
+.rpill{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;cursor:pointer;transition:all .15s}
+.rpill:has(input:checked){border-color:#2563eb;background:#eff6ff;color:#1d4ed8;font-weight:600}
+.rpill input{display:none}
+.fi{height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:4px;font-size:13px;font-family:inherit;color:#334155;background:#fff;transition:all .15s}
+.fi:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.fi[disabled],.fi[readonly]{background:#f8fafc;color:#64748b;cursor:default}
+select.fi{padding-right:28px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:36px;padding:0 16px;font-size:13px;font-weight:500;border-radius:4px;border:1px solid transparent;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn:active{transform:translateY(1px)}
+.btn-p{background:#2563eb;color:#fff;border-color:#2563eb}.btn-p:hover{background:#1d4ed8}
+.btn-o{background:#fff;color:#2563eb;border-color:#bfdbfe}.btn-o:hover{background:#eff6ff}
+.btn-s{background:#fff;color:#475569;border-color:#cbd5e1}.btn-s:hover{background:#f8fafc}
+.toast-c{position:fixed;top:60px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:500;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.12);transform:translateX(calc(100% + 24px));transition:transform .3s cubic-bezier(.16,1,.3,1)}
+.toast.show{transform:translateX(0)}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden;margin-bottom:16px}
+.card-head{padding:12px 20px;border-bottom:1px solid #f1f5f9;background:#f8fafc;display:flex;align-items:center;gap:8px}
+.card-head h3{font-size:14px;font-weight:700;color:#1e293b}
+.card-body{padding:16px 20px}
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+<div class="noise"></div>
+
+<div id="common-header"></div>
+<script src="common-header.js"></script>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <nav class="flex items-center gap-1.5 text-xs text-slate-400 mb-2">
+    <span>시스템관리</span><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[10px]"></iconify-icon>
+    <span>사용자 관리</span><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[10px]"></iconify-icon>
+    <span class="text-slate-600 font-medium">상세</span>
+  </nav>
+  <h1 class="text-xl font-bold text-slate-900 tracking-tight leading-snug mb-5 break-keep">사용자 정보</h1>
+
+  <!-- ══ 계정 정보 ══ -->
+  <div class="card">
+    <div class="card-head"><iconify-icon icon="solar:lock-keyhole-minimalistic-linear" class="text-accent-500"></iconify-icon><h3>계정 정보</h3></div>
+    <div class="card-body">
+      <div class="f-row">
+        <div class="f-label"><span class="req">*</span>아이디</div>
+        <div><input type="text" class="fi w-64" value="org_gangnam_01" readonly></div>
+      </div>
+      <div class="f-row">
+        <div class="f-label">비밀번호</div>
+        <div><input type="password" class="fi w-64" placeholder="변경 시에만 입력"></div>
+      </div>
+      <div class="f-row">
+        <div class="f-label">비밀번호 확인</div>
+        <div><input type="password" class="fi w-64" placeholder="비밀번호 확인"></div>
+      </div>
+      <div class="f-row">
+        <div class="f-label"><span class="req">*</span>사용자 그룹</div>
+        <div class="flex items-center gap-2">
+          <select class="fi w-48" disabled><option>피평가자</option></select>
+          <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-accent-50 text-accent-700">USER</span>
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-label">사용 여부</div>
+        <div class="flex gap-2 pt-1">
+          <label class="rpill"><input type="radio" name="useYn" checked>사용</label>
+          <label class="rpill"><input type="radio" name="useYn">미사용</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 기관 정보 ══ -->
+  <div class="card">
+    <div class="card-head"><iconify-icon icon="solar:buildings-2-linear" class="text-accent-500"></iconify-icon><h3>기관 정보</h3><span class="ml-auto text-xs text-slate-400">사용자 그룹이 피평가자(USER)인 경우 표시</span></div>
+    <div class="card-body">
+      <div class="f-row">
+        <div class="f-label"><span class="req">*</span>평가정보</div>
+        <div><select class="fi w-72" disabled><option>2026년 종합평가(종합형)</option></select></div>
+      </div>
+      <div class="f-row-2">
+        <div class="f-label"><span class="req">*</span>시도</div>
+        <div><select class="fi w-44"><option>서울특별시</option><option>부산광역시</option><option>대구광역시</option></select></div>
+        <div class="f-label"><span class="req">*</span>시군구</div>
+        <div><select class="fi w-44"><option>강남구</option><option>서초구</option><option>송파구</option></select></div>
+      </div>
+      <div class="f-row">
+        <div class="f-label"><span class="req">*</span>기관명</div>
+        <div><input type="text" class="fi w-full" value="강남구노인맞춤돌봄센터"></div>
+      </div>
+      <div class="f-row">
+        <div class="f-label"><span class="req">*</span>기관장</div>
+        <div><input type="text" class="fi w-48" value="김하윤"></div>
+      </div>
+      <div class="f-row-2">
+        <div class="f-label"><span class="req">*</span>기관 유형</div>
+        <div><select class="fi w-48"><option value="">선택</option><option selected>사회복지관</option><option>재가복지센터</option></select></div>
+        <div class="f-label"><span class="req">*</span>세부 기관 유형</div>
+        <div><select class="fi w-48"><option value="">선택</option><option selected>종합사회복지관</option><option>지역사회복지관</option></select></div>
+      </div>
+      <div class="f-row">
+        <div class="f-label"><span class="req">*</span>주소</div>
+        <div class="flex flex-col gap-2">
+          <div class="flex gap-2"><input type="text" class="fi w-28" value="06234" placeholder="우편번호"><button class="btn btn-o" style="height:36px" onclick="toast('주소 검색 팝업','info')">조회</button></div>
+          <input type="text" class="fi w-full" value="서울특별시 강남구 테헤란로 123" readonly>
+          <input type="text" class="fi w-full" value="4층" placeholder="상세주소">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 연락처 정보 ══ -->
+  <div class="card">
+    <div class="card-head"><iconify-icon icon="solar:phone-linear" class="text-accent-500"></iconify-icon><h3>연락처 정보</h3></div>
+    <div class="card-body">
+      <div class="f-row-2">
+        <div class="f-label"><span class="req">*</span>전화번호</div>
+        <div><input type="text" class="fi w-44" value="0215884885" placeholder="하이픈(-) 제외"></div>
+        <div class="f-label">휴대전화</div>
+        <div><input type="text" class="fi w-44" value="01012345678" placeholder="하이픈(-) 제외"></div>
+      </div>
+      <div class="f-row">
+        <div class="f-label"><span class="req">*</span>이메일</div>
+        <div><input type="text" class="fi w-72" value="gangnam@welfare.or.kr"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 하단 버튼 ══ -->
+  <div class="flex items-center justify-between mt-2 mb-8">
+    <button class="btn btn-s" data-action="back"><iconify-icon icon="solar:arrow-left-linear"></iconify-icon>목록</button>
+    <div class="flex gap-2">
+      <button class="btn btn-s" data-action="cancel">취소</button>
+      <button class="btn btn-p" data-action="save"><iconify-icon icon="solar:diskette-linear"></iconify-icon>수정</button>
+    </div>
+  </div>
+</main>
+
+<div class="toast-c" id="toastC"></div>
+<script>
+function toast(m,t){var c=document.getElementById('toastC'),el=document.createElement('div'),bg={success:'#059669',error:'#dc2626',info:'#334155'};el.className='toast';el.style.background=bg[t]||bg.info;el.textContent=m;c.appendChild(el);requestAnimationFrame(function(){requestAnimationFrame(function(){el.classList.add('show')})});setTimeout(function(){el.classList.remove('show');setTimeout(function(){el.remove()},300)},2500)}
+document.querySelectorAll('[data-action]').forEach(function(b){b.addEventListener('click',function(){var m={save:['수정되었습니다','success'],cancel:['취소되었습니다','info'],back:['목록으로 이동','info']};var d=m[this.dataset.action];if(d)toast(d[0],d[1])})});
+</script>
+</body>
+</html>
